@@ -1,10 +1,11 @@
 {
   "name": "omniverse-custom-paths",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Deploy apps with custom URL paths - domain.com/your-name",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
