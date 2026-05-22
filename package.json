@@ -1,7 +1,7 @@
 {
-  "name": "omniverse-zass",
+  "name": "omniverse-super-ai",
   "version": "1.0.0",
-  "description": "Deploy apps on zass.website with custom URLs",
+  "description": "OmniVerse on zass.website with Super AI that knows everything",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
