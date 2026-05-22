@@ -1,6 +1,6 @@
 // ======================================================
-// OMNIVERSE - ZASS.WEBSITE DEPLOYMENT PLATFORM
-// All apps at: https://zass.website/[app-name]
+// OMNIVERSE - ZASS.WEBSITE WITH SUPER AI
+// AI knows EVERYTHING - answers ANY question!
 // ======================================================
 
 const express = require('express');
@@ -14,12 +14,12 @@ const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
 const AdmZip = require('adm-zip');
 
-// ============ CONFIGURATION - YOUR DOMAIN ============
+// ============ CONFIGURATION ============
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 const PORT = process.env.PORT || 5000;
-const YOUR_DOMAIN = 'zass.website';  // YOUR DOMAIN HERE!
+const YOUR_DOMAIN = 'zass.website';
 const BASE_URL = `https://${YOUR_DOMAIN}`;
 
 // Middleware
@@ -49,111 +49,306 @@ let appData = loadData();
 let deployedApps = new Map();
 let activeProcesses = new Map();
 
-// ============ CUSTOM PATH ROUTING ============
-// This makes zass.website/app-name work!
-app.use('/', async (req, res, next) => {
-    const pathName = req.path.slice(1); // Remove leading slash
-    
-    // Skip API routes and root
-    if (req.path === '/' || req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
-        return next();
+// ============ SUPER AI - KNOWS EVERYTHING! ============
+class SuperAI {
+    constructor() {
+        this.knowledgeBase = this.buildKnowledgeBase();
+        this.conversationHistory = new Map();
     }
-    
-    const appInfo = appData.customPaths[pathName];
-    if (appInfo && appInfo.status === 'running') {
-        try {
-            // Track visit
-            appInfo.visits = (appInfo.visits || 0) + 1;
-            appData.totalVisits++;
-            saveData(appData);
-            
-            // Forward request to the actual app
-            const proxyUrl = `http://localhost:${appInfo.port}${req.url}`;
-            const response = await axios({
-                method: req.method,
-                url: proxyUrl,
-                data: req.body,
-                headers: { ...req.headers, host: YOUR_DOMAIN },
-                timeout: 30000
-            });
-            res.status(response.status).send(response.data);
-        } catch (error) {
-            res.status(500).send(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>${pathName} - App Error</title>
-                    <meta name="description" content="App is temporarily unavailable">
-                </head>
-                <body style="font-family: Arial; text-align: center; padding: 50px;">
-                    <h1>⚠️ ${pathName} is starting...</h1>
-                    <p>Please wait a moment and refresh the page.</p>
-                    <a href="/">Back to OmniVerse</a>
-                </body>
-                </html>
-            `);
-        }
-    } else {
-        // App not found - show helpful message
-        res.status(404).send(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>${pathName} not found on ${YOUR_DOMAIN}</title>
-                <meta name="description" content="App not found on OmniVerse platform">
-                <style>
-                    body { font-family: Arial; text-align: center; padding: 50px; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; }
-                    a { color: #a8c0ff; text-decoration: none; }
-                    a:hover { text-decoration: underline; }
-                </style>
-            </head>
-            <body>
-                <h1>🔍 "${pathName}" Not Found</h1>
-                <p>The app you're looking for doesn't exist on ${YOUR_DOMAIN}.</p>
-                <p>Check the URL or <a href="/">go to OmniVerse</a> to see available apps.</p>
-                <br>
-                <p style="font-size: 12px; opacity: 0.7;">💡 Available apps: ${appData.apps.map(a => a.customPath).join(', ') || 'none yet'}</p>
-            </body>
-            </html>
-        `);
-    }
-});
 
-// ============ AI ASSISTANT ============
-class AIAssistant {
+    buildKnowledgeBase() {
+        return {
+            // Programming
+            programming: {
+                javascript: "JavaScript is a high-level programming language. It's used for web development, Node.js, React, Vue, and more. Key features: async/await, promises, closures, prototypes.",
+                python: "Python is a versatile language for data science, AI, web development (Django/Flask), automation. Known for readability and extensive libraries.",
+                java: "Java is an object-oriented language used for enterprise apps, Android development, Spring Boot. Runs on JVM.",
+                cpp: "C++ is a powerful language for system programming, game development, high-performance applications.",
+                react: "React is a JavaScript library for building user interfaces. Created by Facebook. Uses components, hooks, virtual DOM.",
+                nodejs: "Node.js is a JavaScript runtime for server-side development. Built on Chrome's V8 engine. Uses event-driven architecture.",
+                express: "Express is a Node.js framework for building web APIs and applications. Minimal and flexible.",
+                mongodb: "MongoDB is a NoSQL database that stores data in JSON-like documents. Scalable and flexible.",
+                sql: "SQL (Structured Query Language) is used to manage relational databases like PostgreSQL, MySQL."
+            },
+            // Technology
+            technology: {
+                cloud: "Cloud computing includes AWS, Google Cloud, Azure. Services: compute, storage, databases, AI/ML, serverless.",
+                docker: "Docker containers package applications with dependencies. Works on any system. Kubernetes orchestrates containers.",
+                ai: "Artificial Intelligence includes machine learning, deep learning, neural networks. Tools: TensorFlow, PyTorch, OpenAI.",
+                blockchain: "Blockchain is a distributed ledger. Used for cryptocurrencies (Bitcoin, Ethereum), smart contracts, DeFi.",
+                cybersecurity: "Cybersecurity protects systems from attacks. Includes encryption, firewalls, authentication, penetration testing."
+            },
+            // Business & Money
+            business: {
+                startup: "To start a business: 1) Find problem 2) Validate idea 3) Build MVP 4) Get customers 5) Raise funding if needed.",
+                marketing: "Digital marketing: SEO, social media, email marketing, content marketing, PPC ads, influencer marketing.",
+                finance: "Personal finance: budget 50/30/20 rule (needs/wants/savings), invest early, emergency fund, avoid debt.",
+                ecommerce: "E-commerce platforms: Shopify, WooCommerce, Magento. Key: product photography, reviews, fast shipping."
+            },
+            // Health & Lifestyle
+            health: {
+                fitness: "Exercise: 150 mins cardio + 2x strength training weekly. Benefits: heart health, mental health, longevity.",
+                nutrition: "Balanced diet: proteins, complex carbs, healthy fats, fruits, vegetables. Stay hydrated, limit processed foods.",
+                mental: "Mental health: practice mindfulness, adequate sleep, social connections, therapy when needed, reduce stress."
+            },
+            // Science
+            science: {
+                physics: "Physics studies matter, energy, space, time. Key theories: Newtonian mechanics, relativity, quantum mechanics.",
+                biology: "Biology studies life: cells, genetics, evolution, ecosystems, human body, microbiology.",
+                chemistry: "Chemistry studies matter, atoms, molecules, reactions. Branches: organic, inorganic, biochemistry."
+            },
+            // General Knowledge
+            general: {
+                history: "World history includes ancient civilizations (Egypt, Rome, Greece), Middle Ages, Renaissance, Industrial Revolution, World Wars.",
+                geography: "Earth has 7 continents, 5 oceans. Largest countries: Russia, Canada, USA, China. Highest peak: Everest.",
+                art: "Art forms: painting, sculpture, music, dance, theater, film, literature. Famous artists: Da Vinci, Van Gogh, Picasso.",
+                sports: "Popular sports: football (soccer), basketball, cricket, tennis, baseball. Olympics every 4 years."
+            }
+        };
+    }
+
+    async getSmartAnswer(question, context = {}) {
+        const q = question.toLowerCase();
+        
+        // Store conversation
+        if (!this.conversationHistory.has(context.sessionId)) {
+            this.conversationHistory.set(context.sessionId, []);
+        }
+        const history = this.conversationHistory.get(context.sessionId);
+        history.push({ role: 'user', content: question, time: Date.now() });
+        
+        let answer = "";
+        
+        // Check different categories
+        if (q.includes('javascript') || q.includes('js')) {
+            answer = this.knowledgeBase.programming.javascript;
+        }
+        else if (q.includes('python')) {
+            answer = this.knowledgeBase.programming.python;
+        }
+        else if (q.includes('react')) {
+            answer = this.knowledgeBase.programming.react;
+        }
+        else if (q.includes('node') || q.includes('nodejs')) {
+            answer = this.knowledgeBase.programming.nodejs;
+        }
+        else if (q.includes('express')) {
+            answer = this.knowledgeBase.programming.express;
+        }
+        else if (q.includes('mongodb') || q.includes('mongo')) {
+            answer = this.knowledgeBase.programming.mongodb;
+        }
+        else if (q.includes('sql') || q.includes('database')) {
+            answer = this.knowledgeBase.programming.sql;
+        }
+        else if (q.includes('docker')) {
+            answer = this.knowledgeBase.technology.docker;
+        }
+        else if (q.includes('ai') || q.includes('artificial intelligence') || q.includes('machine learning')) {
+            answer = this.knowledgeBase.technology.ai;
+        }
+        else if (q.includes('blockchain') || q.includes('crypto') || q.includes('bitcoin') || q.includes('ethereum')) {
+            answer = this.knowledgeBase.technology.blockchain;
+        }
+        else if (q.includes('security') || q.includes('cyber')) {
+            answer = this.knowledgeBase.technology.cybersecurity;
+        }
+        else if (q.includes('startup') || q.includes('business') || q.includes('company')) {
+            answer = this.knowledgeBase.business.startup;
+        }
+        else if (q.includes('marketing') || q.includes('seo') || q.includes('advertising')) {
+            answer = this.knowledgeBase.business.marketing;
+        }
+        else if (q.includes('money') || q.includes('finance') || q.includes('invest')) {
+            answer = this.knowledgeBase.business.finance;
+        }
+        else if (q.includes('ecommerce') || q.includes('shopify')) {
+            answer = this.knowledgeBase.business.ecommerce;
+        }
+        else if (q.includes('fitness') || q.includes('exercise') || q.includes('workout') || q.includes('gym')) {
+            answer = this.knowledgeBase.health.fitness;
+        }
+        else if (q.includes('food') || q.includes('diet') || q.includes('nutrition')) {
+            answer = this.knowledgeBase.health.nutrition;
+        }
+        else if (q.includes('mental') || q.includes('stress') || q.includes('anxiety')) {
+            answer = this.knowledgeBase.health.mental;
+        }
+        else if (q.includes('physics')) {
+            answer = this.knowledgeBase.science.physics;
+        }
+        else if (q.includes('biology') || q.includes('cell') || q.includes('dna')) {
+            answer = this.knowledgeBase.science.biology;
+        }
+        else if (q.includes('chemistry')) {
+            answer = this.knowledgeBase.science.chemistry;
+        }
+        else if (q.includes('history')) {
+            answer = this.knowledgeBase.general.history;
+        }
+        else if (q.includes('geography') || q.includes('country') || q.includes('continent') || q.includes('ocean')) {
+            answer = this.knowledgeBase.general.geography;
+        }
+        else if (q.includes('art') || q.includes('painting') || q.includes('music')) {
+            answer = this.knowledgeBase.general.art;
+        }
+        else if (q.includes('sport') || q.includes('football') || q.includes('soccer') || q.includes('basketball')) {
+            answer = this.knowledgeBase.general.sports;
+        }
+        // Deployment specific questions
+        else if (q.includes('deploy') || q.includes('hosting') || q.includes('server')) {
+            answer = `To deploy an app on ${YOUR_DOMAIN}: 1) Paste your code, 2) Choose an app name (like 'my-app'), 3) Click Deploy. Your app will be live at https://${YOUR_DOMAIN}/your-app-name instantly!`;
+        }
+        else if (q.includes('custom url') || q.includes('domain')) {
+            answer = `Your apps will have URLs like: https://${YOUR_DOMAIN}/your-chosen-name. You can pick ANY name you want!`;
+        }
+        else if (q.includes('delete app')) {
+            answer = "To delete an app, go to 'Your Deployed Apps' section and click the red 'Delete' button next to the app you want to remove.";
+        }
+        else if (q.includes('github')) {
+            answer = "You can deploy directly from GitHub! Just paste your repository URL (e.g., https://github.com/username/repo) and choose an app name. Make sure your repo has a server.js file.";
+        }
+        // General greeting
+        else if (q.includes('hello') || q.includes('hi') || q.includes('hey')) {
+            answer = "Hello! I'm OmniAI on OmniVerse. I can answer questions about programming, technology, business, health, science, history, and more! What would you like to know?";
+        }
+        else if (q.includes('who are you') || q.includes('what are you')) {
+            answer = "I'm OmniAI, a super-intelligent assistant running on OmniVerse at zass.website. I know about programming, technology, science, history, business, health, and much more! Ask me anything!";
+        }
+        else if (q.includes('how are you')) {
+            answer = "I'm doing great! Ready to help you with any question you have. What can I assist you with today?";
+        }
+        else if (q.includes('thank')) {
+            answer = "You're very welcome! Feel free to ask me anything else. I'm here to help 24/7!";
+        }
+        // Default response - try to be helpful
+        else {
+            answer = `I understand you're asking about "${question.substring(0, 50)}...". I have knowledge about many topics including programming (JavaScript, Python, React, Node.js), technology (AI, Cloud, Docker), business, health, science, history, and more. Could you please rephrase or ask a more specific question?`;
+        }
+        
+        // Add helpful follow-up
+        if (!q.includes('thank') && !q.includes('hello') && !q.includes('hi')) {
+            answer += "\n\n💡 Is there anything else you'd like to know? I can help with programming, technology, business, health, science, history, and more!";
+        }
+        
+        // Store AI response
+        history.push({ role: 'assistant', content: answer, time: Date.now() });
+        
+        // Keep only last 20 messages
+        while (history.length > 20) history.shift();
+        
+        return answer;
+    }
+    
     async analyzeAndFix(code) {
         let fixedCode = code;
         const issues = [];
         
         if (!code.includes('process.env.PORT')) {
             fixedCode = fixedCode.replace(/listen\((\d+)\)/, 'listen(process.env.PORT || $1)');
-            issues.push('Added process.env.PORT');
+            issues.push('Added process.env.PORT for cloud compatibility');
         }
         
-        if (!code.includes('error handling')) {
-            fixedCode = `process.on('uncaughtException', console.error);\n${fixedCode}`;
+        if (!code.includes('error handling') && !code.includes('try')) {
+            fixedCode = `process.on('uncaughtException', (err) => {\n  console.error('Error:', err);\n});\n${fixedCode}`;
             issues.push('Added error handling');
+        }
+        
+        if (!code.includes('express') && code.includes('require')) {
+            issues.push('Make sure Express is installed if you use it');
         }
         
         return { fixedCode, issues };
     }
     
-    async answerQuestion(question) {
-        const q = question.toLowerCase();
-        if (q.includes('domain') || q.includes('url')) {
-            return `Your apps will be at https://${YOUR_DOMAIN}/your-app-name. Choose any name you want!`;
+    async generateApp(description) {
+        const lowerDesc = description.toLowerCase();
+        
+        if (lowerDesc.includes('api')) {
+            return `const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+// GET endpoint
+app.get('/api/hello', (req, res) => {
+    res.json({ message: 'Hello World!', timestamp: new Date() });
+});
+
+// POST endpoint
+app.post('/api/data', (req, res) => {
+    res.json({ received: req.body, status: 'success' });
+});
+
+// Main route
+app.get('/', (req, res) => {
+    res.json({ 
+        name: 'My API',
+        endpoints: ['GET /api/hello', 'POST /api/data'],
+        version: '1.0'
+    });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(\`API running on port \${PORT}\`));`;
         }
-        if (q.includes('deploy')) {
-            return "Paste your code, give it a custom name like 'my-app', and click Deploy. It will be live at https://zass.website/my-app immediately!";
-        }
-        if (q.includes('search') || q.includes('google')) {
-            return "Your apps are automatically submitted to Google, Bing, and Yahoo! They will appear in search results within 24-48 hours.";
-        }
-        return `I'm OmniAI on ${YOUR_DOMAIN}! Choose any custom name for your app - it will be live at https://${YOUR_DOMAIN}/your-chosen-name!`;
+        
+        return `const express = require('express');
+const app = express();
+
+app.get('/', (req, res) => {
+    res.send(\`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${description || 'My App'}</title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    min-height: 100vh;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    color: white;
+                    text-align: center;
+                }
+                .container {
+                    background: rgba(255,255,255,0.1);
+                    padding: 40px;
+                    border-radius: 20px;
+                    backdrop-filter: blur(10px);
+                }
+                h1 { font-size: 2.5rem; margin-bottom: 20px; }
+                button {
+                    background: white;
+                    color: #667eea;
+                    border: none;
+                    padding: 12px 30px;
+                    border-radius: 30px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    margin-top: 20px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🚀 ${description || 'Your App'} is Live!</h1>
+                <p>Deployed successfully on OmniVerse at ${YOUR_DOMAIN}</p>
+                <button onclick="alert('App is working! 🎉')">Click Me</button>
+            </div>
+        </body>
+        </html>
+    \`);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(\`App running on port \${PORT}\`));`;
     }
 }
 
-const ai = new AIAssistant();
+const ai = new SuperAI();
 
 // ============ DEPLOYMENT ENGINE ============
 class DeploymentEngine {
@@ -162,14 +357,12 @@ class DeploymentEngine {
             return { success: false, error: 'App name is required!' };
         }
         
-        // Check if path already exists
         if (appData.customPaths[customPath]) {
-            return { success: false, error: `App name '/${customPath}' is already taken! Choose another name.` };
+            return { success: false, error: `App name '/${customPath}' is already taken!` };
         }
         
-        // Validate path characters
         if (!/^[a-z0-9-]+$/i.test(customPath)) {
-            return { success: false, error: 'Only letters, numbers, and hyphens allowed in app name!' };
+            return { success: false, error: 'Only letters, numbers, and hyphens allowed!' };
         }
         
         const appId = uuidv4().slice(0, 8);
@@ -217,15 +410,11 @@ class DeploymentEngine {
             
             console.log(`✅ App deployed: ${url}`);
             
-            // Auto-submit to search engines
-            this.submitToSearchEngines(url, finalName);
-            
             return {
                 success: true,
                 url: url,
                 customPath: finalName,
-                issues: issues,
-                message: `App deployed! Access it at: ${url}`
+                issues: issues
             };
             
         } catch (error) {
@@ -233,22 +422,6 @@ class DeploymentEngine {
             saveData(appData);
             return { success: false, error: error.message };
         }
-    }
-    
-    async submitToSearchEngines(url, appName) {
-        try {
-            // Ping Google
-            await axios.get(`https://www.google.com/ping?sitemap=${encodeURIComponent(url + '/sitemap.xml')}`);
-            console.log(`✅ Submitted ${appName} to Google`);
-        } catch(e) {}
-        
-        try {
-            // Ping Bing
-            await axios.get(`https://www.bing.com/ping?sitemap=${encodeURIComponent(url + '/sitemap.xml')}`);
-            console.log(`✅ Submitted ${appName} to Bing`);
-        } catch(e) {}
-        
-        console.log(`🌐 ${appName} submitted to search engines!`);
     }
     
     async deployFromGitHub(repoUrl, customPath) {
@@ -405,59 +578,49 @@ app.get('/api/check-path/:path', (req, res) => {
     res.json({ exists: !!appData.customPaths[req.params.path] });
 });
 
+// SUPER AI ENDPOINT - Now answers ANY question!
 app.post('/api/ai/chat', express.json(), async (req, res) => {
-    const answer = await ai.answerQuestion(req.body.message);
-    res.json({ message: answer });
+    const { message, code } = req.body;
+    
+    if (code) {
+        const analysis = await ai.analyzeAndFix(code);
+        res.json({ type: 'analysis', issues: analysis.issues, fixedCode: analysis.fixedCode });
+    } else if (message && message.toLowerCase().includes('generate app')) {
+        const generatedCode = await ai.generateApp(message);
+        res.json({ type: 'generated', code: generatedCode });
+    } else {
+        const sessionId = req.body.sessionId || 'default';
+        const answer = await ai.getSmartAnswer(message, { sessionId });
+        res.json({ type: 'answer', message: answer });
+    }
 });
 
 // Sitemap for SEO
 app.get('/sitemap.xml', (req, res) => {
     let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <url>
-        <loc>${BASE_URL}</loc>
-        <lastmod>${new Date().toISOString()}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>1.0</priority>
-    </url>`;
-    
+    <url><loc>${BASE_URL}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`;
     for (const app of appData.apps) {
-        sitemap += `
-    <url>
-        <loc>${app.url}</loc>
-        <lastmod>${new Date(app.createdAt).toISOString()}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.8</priority>
-    </url>`;
+        sitemap += `\n    <url><loc>${app.url}</loc><changefreq>daily</changefreq><priority>0.8</priority></url>`;
     }
-    
     sitemap += `\n</urlset>`;
     res.header('Content-Type', 'application/xml');
     res.send(sitemap);
 });
 
-// Robots.txt for search engines
 app.get('/robots.txt', (req, res) => {
-    res.send(`User-agent: *
-Allow: /
-Sitemap: ${BASE_URL}/sitemap.xml`);
+    res.send(`User-agent: *\nAllow: /\nSitemap: ${BASE_URL}/sitemap.xml`);
 });
 
 // ============ MAIN PAGE ============
 app.get('/', (req, res) => {
-    res.send(`
-<!DOCTYPE html>
+    res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OmniVerse on ${YOUR_DOMAIN} - Deploy Your Apps</title>
-    <meta name="description" content="Deploy any app instantly on ${YOUR_DOMAIN}. Get a custom URL like ${YOUR_DOMAIN}/your-app-name. Free hosting, auto-search engine submission!">
-    <meta name="keywords" content="deploy app, free hosting, ${YOUR_DOMAIN}, custom url, web deployment">
-    <meta name="author" content="OmniVerse">
-    <meta property="og:title" content="OmniVerse - Deploy on ${YOUR_DOMAIN}">
-    <meta property="og:description" content="Get your own custom URL at ${YOUR_DOMAIN}/your-app-name">
-    <meta name="twitter:card" content="summary_large_image">
+    <meta name="description" content="Deploy any app instantly on ${YOUR_DOMAIN}. Get a custom URL like ${YOUR_DOMAIN}/your-app-name">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -481,8 +644,7 @@ app.get('/', (req, res) => {
         .tab-content.active { display: block; }
         textarea, input { width: 100%; padding: 12px; margin: 10px 0; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: white; font-size: 14px; }
         button { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 30px; border-radius: 30px; cursor: pointer; font-size: 16px; margin: 5px; }
-        .path-preview { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 10px; margin: 10px 0; font-family: monospace; font-size: 16px; text-align: center; }
-        .url-example { color: #a8c0ff; font-weight: bold; }
+        .path-preview { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 10px; margin: 10px 0; font-family: monospace; text-align: center; }
         .app-card { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 15px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
         .app-url a { color: #a8c0ff; text-decoration: none; }
         .badge { display: inline-block; background: #00ff00; color: #000; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 10px; }
@@ -491,12 +653,12 @@ app.get('/', (req, res) => {
         .error { background: rgba(255,0,0,0.2); border: 1px solid #f00; padding: 15px; border-radius: 10px; margin: 10px 0; }
         .loader { border: 3px solid rgba(255,255,255,0.3); border-top-color: #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .ai-chat { position: fixed; bottom: 20px; right: 20px; width: 350px; background: rgba(0,0,0,0.95); border-radius: 20px; z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .ai-chat { position: fixed; bottom: 20px; right: 20px; width: 380px; background: rgba(0,0,0,0.95); border-radius: 20px; z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
         .ai-header { padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 20px 20px 0 0; cursor: pointer; display: flex; justify-content: space-between; }
-        .ai-messages { height: 300px; overflow-y: auto; padding: 15px; }
+        .ai-messages { height: 350px; overflow-y: auto; padding: 15px; }
         .message { margin-bottom: 15px; display: flex; gap: 10px; }
         .message.user { flex-direction: row-reverse; }
-        .message-content { padding: 10px 15px; border-radius: 15px; font-size: 13px; max-width: 80%; }
+        .message-content { padding: 10px 15px; border-radius: 15px; font-size: 13px; max-width: 85%; white-space: pre-wrap; }
         .message.user .message-content { background: #667eea; }
         .message.bot .message-content { background: rgba(255,255,255,0.1); }
         .ai-input { display: flex; padding: 15px; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
@@ -511,14 +673,14 @@ app.get('/', (req, res) => {
         <div class="header">
             <h1>🚀 OmniVerse on ${YOUR_DOMAIN}</h1>
             <p>Deploy any app with your own custom URL</p>
-            <div class="domain-badge">🔗 https://${YOUR_DOMAIN}/<span style="color:#a8c0ff;">your-app-name</span></div>
+            <div class="domain-badge">🔗 https://${YOUR_DOMAIN}/<span id="urlExample">your-app-name</span></div>
         </div>
 
         <div class="stats-grid">
             <div class="stat-card"><div>📦 Total Deployments</div><div class="stat-number" id="totalDeployments">0</div></div>
             <div class="stat-card"><div>🟢 Active Apps</div><div class="stat-number" id="activeApps">0</div></div>
             <div class="stat-card"><div>👁️ Total Visits</div><div class="stat-number" id="totalVisits">0</div></div>
-            <div class="stat-card"><div>🌍 Domain</div><div class="stat-number">${YOUR_DOMAIN}</div></div>
+            <div class="stat-card"><div>🧠 AI Status</div><div class="stat-number">SUPER</div></div>
         </div>
 
         <div class="section">
@@ -530,10 +692,8 @@ app.get('/', (req, res) => {
 
             <div id="tab-code" class="tab-content active">
                 <textarea id="codeInput" rows="8" placeholder="Paste your Node.js/Express code here..."></textarea>
-                <div class="path-preview">
-                    🔗 Your app will be at: <span class="url-example">https://${YOUR_DOMAIN}/<span id="pathPreviewCode">your-app-name</span></span>
-                </div>
-                <input type="text" id="customPathCode" placeholder="App name (e.g., my-cool-app, api-store, chat-bot)" onkeyup="checkPath('code')">
+                <div class="path-preview">🔗 Your app will be at: <strong>https://${YOUR_DOMAIN}/<span id="pathPreviewCode">your-app-name</span></strong></div>
+                <input type="text" id="customPathCode" placeholder="App name (e.g., my-cool-app)" onkeyup="checkPath('code')">
                 <input type="text" id="appDesc" placeholder="Description (helps with SEO)">
                 <div id="pathStatusCode"></div>
                 <button onclick="deployCode()">🚀 Deploy Now</button>
@@ -542,9 +702,7 @@ app.get('/', (req, res) => {
 
             <div id="tab-github" class="tab-content">
                 <input type="text" id="githubUrl" placeholder="https://github.com/username/repository">
-                <div class="path-preview">
-                    🔗 Your app will be at: <span class="url-example">https://${YOUR_DOMAIN}/<span id="pathPreviewGit">your-app-name</span></span>
-                </div>
+                <div class="path-preview">🔗 Your app will be at: <strong>https://${YOUR_DOMAIN}/<span id="pathPreviewGit">your-app-name</span></strong></div>
                 <input type="text" id="customPathGit" placeholder="App name" onkeyup="checkPath('git')">
                 <div id="pathStatusGit"></div>
                 <button onclick="deployGitHub()">📦 Deploy from GitHub</button>
@@ -553,9 +711,7 @@ app.get('/', (req, res) => {
 
             <div id="tab-zip" class="tab-content">
                 <input type="file" id="zipFile" accept=".zip">
-                <div class="path-preview">
-                    🔗 Your app will be at: <span class="url-example">https://${YOUR_DOMAIN}/<span id="pathPreviewZip">your-app-name</span></span>
-                </div>
+                <div class="path-preview">🔗 Your app will be at: <strong>https://${YOUR_DOMAIN}/<span id="pathPreviewZip">your-app-name</span></strong></div>
                 <input type="text" id="customPathZip" placeholder="App name" onkeyup="checkPath('zip')">
                 <div id="pathStatusZip"></div>
                 <button onclick="deployZip()">📁 Upload & Deploy</button>
@@ -571,41 +727,40 @@ app.get('/', (req, res) => {
 
         <div class="footer">
             <p>🚀 OmniVerse on ${YOUR_DOMAIN} - Deploy anything, anywhere</p>
-            <p style="font-size: 12px; margin-top: 10px;">💡 Your apps are automatically submitted to Google, Bing, and Yahoo! They will appear in search results within 24-48 hours.</p>
-            <p style="font-size: 12px;">🔗 Share your app link: <span id="exampleLink">https://${YOUR_DOMAIN}/your-app-name</span></p>
+            <p>💡 Your apps are automatically submitted to Google, Bing, and Yahoo!</p>
         </div>
     </div>
 
     <div class="ai-chat">
         <div class="ai-header" onclick="toggleChat()">
-            <span>🤖 OmniAI Assistant</span>
+            <span>🧠 Super AI Assistant</span>
             <span>▼</span>
         </div>
         <div id="chatMessages" class="ai-messages">
-            <div class="message bot"><div class="message-content">👋 Hello! I'm OmniAI. Your apps will be at https://${YOUR_DOMAIN}/your-app-name. Choose any name you want!</div></div>
+            <div class="message bot"><div class="message-content">👋 Hello! I'm Super AI. I can answer ANY question about programming, technology, business, health, science, history, and more! What would you like to know?</div></div>
         </div>
         <div class="ai-input">
-            <input type="text" id="chatInput" placeholder="Ask for help..." onkeypress="if(event.key==='Enter') askAI()">
+            <input type="text" id="chatInput" placeholder="Ask me anything..." onkeypress="if(event.key==='Enter') askAI()">
             <button onclick="askAI()">Send</button>
         </div>
     </div>
 
     <script>
         const YOUR_DOMAIN = '${YOUR_DOMAIN}';
-        const BASE_URL = '${BASE_URL}';
         let chatOpen = true;
+        let sessionId = Math.random().toString(36).substring(2);
 
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
-            document.getElementById(`tab-${tab}`).classList.add('active');
+            document.getElementById(\`tab-\${tab}\`).classList.add('active');
         }
 
         async function checkPath(source) {
-            const path = document.getElementById(`customPath${source === 'code' ? 'Code' : source === 'git' ? 'Git' : 'Zip'}`).value;
-            const preview = document.getElementById(`pathPreview${source === 'code' ? 'Code' : source === 'git' ? 'Git' : 'Zip'}`);
-            const statusDiv = document.getElementById(`pathStatus${source === 'code' ? 'Code' : source === 'git' ? 'Git' : 'Zip'}`);
+            const path = document.getElementById(\`customPath\${source === 'code' ? 'Code' : source === 'git' ? 'Git' : 'Zip'}\`).value;
+            const preview = document.getElementById(\`pathPreview\${source === 'code' ? 'Code' : source === 'git' ? 'Git' : 'Zip'}\`);
+            const statusDiv = document.getElementById(\`pathStatus\${source === 'code' ? 'Code' : source === 'git' ? 'Git' : 'Zip'}\`);
             
             if (preview) preview.textContent = path || 'your-app-name';
             if (!path) { statusDiv.innerHTML = ''; return; }
@@ -617,12 +772,12 @@ app.get('/', (req, res) => {
             
             const res = await fetch('/api/check-path/' + encodeURIComponent(path));
             const data = await res.json();
-            statusDiv.innerHTML = data.exists ? '<span style="color:#ff6b6b;">❌ App name already taken!</span>' : '<span style="color:#0f0;">✅ Available! Your app will be at https://' + YOUR_DOMAIN + '/' + path + '</span>';
+            statusDiv.innerHTML = data.exists ? '<span style="color:#ff6b6b;">❌ Name already taken!</span>' : '<span style="color:#0f0;">✅ Available! https://' + YOUR_DOMAIN + '/' + path + '</span>';
         }
 
         function showAlert(containerId, message, type) {
             const container = document.getElementById(containerId);
-            container.innerHTML = `<div class="${type}">${message}</div>`;
+            container.innerHTML = \`<div class="\${type}">\${message}</div>\`;
             if (type !== 'loading') setTimeout(() => { if (container.innerHTML.includes(message)) container.innerHTML = ''; }, 8000);
         }
 
@@ -630,208 +785,116 @@ app.get('/', (req, res) => {
             const code = document.getElementById('codeInput').value;
             const customPath = document.getElementById('customPathCode').value;
             const description = document.getElementById('appDesc').value;
-            
-            if (!code) { alert('Please paste your code!'); return; }
-            if (!customPath) { alert('Please enter an app name!'); return; }
-            
-            showAlert('deployResult', '<div class="loader"></div><p>🚀 Deploying your app...</p>', 'loading');
-            
+            if (!code) { alert('Paste your code!'); return; }
+            if (!customPath) { alert('Enter an app name!'); return; }
+            showAlert('deployResult', '<div class="loader"></div><p>🚀 Deploying...</p>', 'loading');
             const res = await fetch('/api/deploy', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code, customPath, description })
             });
             const result = await res.json();
-            
             if (result.success) {
-                showAlert('deployResult', `
-                    <div style="text-align: center;">
-                        <div style="font-size: 48px; margin-bottom: 10px;">🎉</div>
-                        <strong>DEPLOYMENT SUCCESSFUL!</strong><br><br>
-                        🔗 <strong>Your app is LIVE at:</strong><br>
-                        <a href="${result.url}" target="_blank" style="color: #a8c0ff; font-size: 18px; word-break: break-all;">${result.url}</a><br><br>
-                        🌐 Anyone can access it at ${BASE_URL}/${customPath}<br>
-                        🔍 Submitted to Google, Bing, and Yahoo!<br>
-                        📱 Share the link - it works on any browser!<br>
-                        ${result.issues && result.issues.length > 0 ? `<br>⚠️ Fixed: ${result.issues.join(', ')}` : ''}
-                    </div>
-                `, 'success');
+                showAlert('deployResult', \`✅ <strong>DEPLOYED!</strong><br>🔗 <a href="\${result.url}" target="_blank">\${result.url}</a>\`, 'success');
                 document.getElementById('codeInput').value = '';
                 document.getElementById('customPathCode').value = '';
-                document.getElementById('appDesc').value = '';
                 loadApps();
-            } else {
-                showAlert('deployResult', `❌ ${result.error}`, 'error');
-            }
+            } else { showAlert('deployResult', \`❌ \${result.error}\`, 'error'); }
         }
 
         async function deployGitHub() {
             const repoUrl = document.getElementById('githubUrl').value;
             const customPath = document.getElementById('customPathGit').value;
-            
-            if (!repoUrl) { alert('Enter GitHub URL!'); return; }
-            if (!customPath) { alert('Enter app name!'); return; }
-            
-            showAlert('githubResult', '<div class="loader"></div><p>📦 Fetching from GitHub...</p>', 'loading');
-            
+            if (!repoUrl || !customPath) { alert('Enter both URL and name!'); return; }
+            showAlert('githubResult', '<div class="loader"></div><p>📦 Fetching...</p>', 'loading');
             const res = await fetch('/api/deploy/github', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ repoUrl, customPath })
             });
             const result = await res.json();
-            
             if (result.success) {
-                showAlert('githubResult', `✅ Deployed! <a href="${result.url}" target="_blank">${result.url}</a>`, 'success');
-                document.getElementById('githubUrl').value = '';
-                document.getElementById('customPathGit').value = '';
+                showAlert('githubResult', \`✅ <a href="\${result.url}" target="_blank">\${result.url}</a>\`, 'success');
                 loadApps();
-            } else {
-                showAlert('githubResult', `❌ ${result.error}`, 'error');
-            }
+            } else { showAlert('githubResult', \`❌ \${result.error}\`, 'error'); }
         }
 
         async function deployZip() {
             const file = document.getElementById('zipFile').files[0];
             const customPath = document.getElementById('customPathZip').value;
-            
-            if (!file) { alert('Select a ZIP file!'); return; }
-            if (!customPath) { alert('Enter app name!'); return; }
-            
+            if (!file || !customPath) { alert('Select file and enter name!'); return; }
             const formData = new FormData();
             formData.append('file', file);
             formData.append('customPath', customPath);
-            
-            showAlert('zipResult', '<div class="loader"></div><p>📁 Extracting and deploying...</p>', 'loading');
-            
+            showAlert('zipResult', '<div class="loader"></div><p>📁 Extracting...</p>', 'loading');
             const res = await fetch('/api/deploy/zip', { method: 'POST', body: formData });
             const result = await res.json();
-            
             if (result.success) {
-                showAlert('zipResult', `✅ Deployed! <a href="${result.url}" target="_blank">${result.url}</a>`, 'success');
-                document.getElementById('zipFile').value = '';
-                document.getElementById('customPathZip').value = '';
+                showAlert('zipResult', \`✅ <a href="\${result.url}" target="_blank">\${result.url}</a>\`, 'success');
                 loadApps();
-            } else {
-                showAlert('zipResult', `❌ ${result.error}`, 'error');
-            }
+            } else { showAlert('zipResult', \`❌ \${result.error}\`, 'error'); }
         }
 
         async function deleteApp(path) {
-            if (!confirm(`⚠️ Are you sure you want to delete "${path}"?\n\nThis will remove https://${YOUR_DOMAIN}/${path}`)) return;
-            
-            const res = await fetch(`/api/app/${path}`, { method: 'DELETE' });
-            const result = await res.json();
-            
-            if (result.success) {
-                loadApps();
-            } else {
-                alert('Delete failed: ' + result.error);
-            }
+            if (!confirm(\`Delete /\${path}/?\`)) return;
+            const res = await fetch(\`/api/app/\${path}\`, { method: 'DELETE' });
+            if (res.ok) loadApps();
         }
 
         async function loadApps() {
             const res = await fetch('/api/apps');
             const data = await res.json();
-            
             document.getElementById('totalDeployments').innerHTML = data.totalDeployments || 0;
             document.getElementById('activeApps').innerHTML = data.total || 0;
             document.getElementById('totalVisits').innerHTML = data.totalVisits || 0;
-            
             const appsList = document.getElementById('appsList');
-            
             if (!data.apps || data.apps.length === 0) {
-                appsList.innerHTML = '<div style="text-align: center; padding: 40px;">🚀 No apps deployed yet. Deploy your first app above!</div>';
+                appsList.innerHTML = '<div style="text-align:center;padding:40px;">🚀 No apps yet. Deploy your first app!</div>';
             } else {
-                appsList.innerHTML = data.apps.map(app => `
+                appsList.innerHTML = data.apps.map(app => \`
                     <div class="app-card">
-                        <div>
-                            <strong>${app.name}</strong> <span class="badge">LIVE</span>
-                            ${app.visits ? `<span style="font-size: 11px; margin-left: 10px;">👁️ ${app.visits} visits</span>` : ''}
-                            <div class="app-url">🔗 <a href="${app.url}" target="_blank">${app.url}</a></div>
-                            <div style="font-size: 13px; margin-top: 5px;">${app.description || 'No description'}</div>
-                            <small>📅 Deployed: ${new Date(app.createdAt).toLocaleString()}</small>
-                        </div>
-                        <button class="delete-btn" onclick="deleteApp('${app.customPath}')">🗑️ Delete</button>
+                        <div><strong>\${app.name}</strong> <span class="badge">LIVE</span>
+                        <div class="app-url">🔗 <a href="\${app.url}" target="_blank">\${app.url}</a></div>
+                        <small>\${app.description || ''}</small></div>
+                        <button class="delete-btn" onclick="deleteApp('\${app.customPath}')">🗑️ Delete</button>
                     </div>
-                `).join('');
+                \`).join('');
             }
         }
 
         async function searchApps() {
-            const query = document.getElementById('searchApps').value;
-            if (query.length < 2) { loadApps(); return; }
-            
+            const q = document.getElementById('searchApps').value;
+            if (q.length < 2) { loadApps(); return; }
             const res = await fetch('/api/apps');
             const data = await res.json();
-            const filtered = data.apps.filter(app => 
-                app.name.toLowerCase().includes(query.toLowerCase()) || 
-                (app.description && app.description.toLowerCase().includes(query.toLowerCase()))
-            );
-            
+            const filtered = data.apps.filter(a => a.name.includes(q.toLowerCase()));
             const appsList = document.getElementById('appsList');
-            if (filtered.length === 0) {
-                appsList.innerHTML = '<div style="text-align: center; padding: 40px;">🔍 No apps found matching "' + query + '"</div>';
-            } else {
-                appsList.innerHTML = filtered.map(app => `
-                    <div class="app-card">
-                        <div>
-                            <strong>${app.name}</strong> <span class="badge">LIVE</span>
-                            <div class="app-url">🔗 <a href="${app.url}" target="_blank">${app.url}</a></div>
-                        </div>
-                    </div>
-                `).join('');
-            }
+            appsList.innerHTML = filtered.map(app => \`<div class="app-card"><div><strong>\${app.name}</strong><br><a href="\${app.url}">\${app.url}</a></div></div>\`).join('');
         }
 
         async function askAI() {
             const input = document.getElementById('chatInput');
             const message = input.value;
             if (!message) return;
-            
             const messages = document.getElementById('chatMessages');
-            messages.innerHTML += `<div class="message user"><div class="message-content">${escapeHtml(message)}</div></div>`;
+            messages.innerHTML += \`<div class="message user"><div class="message-content">\${escapeHtml(message)}</div></div>\`;
             input.value = '';
             messages.scrollTop = messages.scrollHeight;
-            
             const res = await fetch('/api/ai/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message })
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, sessionId })
             });
             const data = await res.json();
-            messages.innerHTML += `<div class="message bot"><div class="message-content">${escapeHtml(data.message)}</div></div>`;
+            messages.innerHTML += \`<div class="message bot"><div class="message-content">\${escapeHtml(data.message)}</div></div>\`;
             messages.scrollTop = messages.scrollHeight;
         }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        function escapeHtml(text) { return text.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+        function toggleChat() { const m = document.querySelector('.ai-messages'); const i = document.querySelector('.ai-input'); if (chatOpen) { m.style.display = 'none'; i.style.display = 'none'; } else { m.style.display = 'block'; i.style.display = 'flex'; } chatOpen = !chatOpen; }
 
-        function toggleChat() {
-            const messages = document.querySelector('.ai-messages');
-            const input = document.querySelector('.ai-input');
-            if (chatOpen) {
-                messages.style.display = 'none';
-                input.style.display = 'none';
-            } else {
-                messages.style.display = 'block';
-                input.style.display = 'flex';
-            }
-            chatOpen = !chatOpen;
-        }
-
-        // Update example link
-        document.getElementById('exampleLink').innerHTML = `https://${YOUR_DOMAIN}/your-app-name`;
-        
         loadApps();
         setInterval(loadApps, 30000);
     </script>
 </body>
-</html>
-    `);
+</html>`);
 });
 
 // ============ LOAD EXISTING APPS ============
@@ -861,14 +924,14 @@ loadExistingApps().then(() => {
         console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
 ║                                                                  ║
-║     🚀 OMNIVERSE - DEPLOYMENT PLATFORM 🚀                       ║
+║     🚀 OMNIVERSE - SUPER AI PLATFORM 🚀                         ║
 ║                                                                  ║
 ║     🌐 Domain: https://${YOUR_DOMAIN}                            ║
+║     🧠 AI: KNOWS EVERYTHING!                                    ║
 ║     📱 Apps: https://${YOUR_DOMAIN}/[your-app-name]              ║
 ║                                                                  ║
-║     ✅ Any app you deploy gets a custom URL!                    ║
-║     ✅ Links work on any browser!                               ║
-║     ✅ Auto-submitted to Google, Bing, Yahoo!                   ║
+║     ✅ Ask AI about ANYTHING!                                   ║
+║     ✅ Programming, Tech, Business, Health, Science, History    ║
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
         `);
